@@ -300,10 +300,6 @@ impl LineraNetConfig for LocalNetConfig {
         net.run().await.unwrap();
         Ok((net, client))
     }
-
-    async fn policy(&self) -> ResourceControlPolicy {
-        self.policy.clone()
-    }
 }
 
 #[async_trait]
