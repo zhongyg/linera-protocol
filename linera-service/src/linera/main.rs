@@ -809,20 +809,18 @@ impl Runnable for Job {
                 let num_proposal = proposals.len();
 
                 let mut join_set = JoinSet::new();
-                for rpc_msg in &proposals {
-                    if let RpcMessage::BlockProposal(proposal) = rpc_msg {
-                        let block = proposal.content.block.clone();
-                        let client = context.client.clone();
-                        join_set.spawn(async move {
-                            let executed_block = client
-                                .local_node()
-                                .stage_block_execution(block, None)
-                                .await?
-                                .0;
-                            let value = Hashed::new(ConfirmedBlock::new(executed_block));
-                            Ok::<_, anyhow::Error>((value.hash(), value))
-                        });
-                    }
+                for proposal in &proposals {
+                    let block = proposal.content.block.clone();
+                    let client = context.client.clone();
+                    join_set.spawn(async move {
+                        let executed_block = client
+                            .local_node()
+                            .stage_block_execution(block, None)
+                            .await?
+                            .0;
+                        let value = Hashed::new(ConfirmedBlock::new(executed_block));
+                        Ok::<_, anyhow::Error>((value.hash(), value))
+                    });
                 }
                 let values = join_set
                     .join_all()
@@ -830,6 +828,10 @@ impl Runnable for Job {
                     .into_iter()
                     .collect::<Result<HashMap<_, _>, _>>()?;
 
+                let proposals = proposals
+                    .into_iter()
+                    .map(|proposal| RpcMessage::BlockProposal(Box::new(proposal)))
+                    .collect::<Vec<_>>();
                 let responses = context.mass_broadcast("block proposals", proposals).await;
                 let votes = responses
                     .into_iter()

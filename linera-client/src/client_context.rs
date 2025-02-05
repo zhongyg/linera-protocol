@@ -877,7 +877,7 @@ where
         key_pairs: &HashMap<ChainId, KeyPair>,
         transactions_per_block: usize,
         fungible_application_id: Option<ApplicationId>,
-    ) -> Vec<RpcMessage> {
+    ) -> Vec<BlockProposal> {
         let mut proposals = Vec::new();
         let mut next_recipient = *key_pairs
             .iter()
@@ -921,7 +921,7 @@ where
                 block.clone(),
                 key_pair,
             );
-            proposals.push(RpcMessage::BlockProposal(Box::new(proposal)));
+            proposals.push(proposal);
             next_recipient = chain.chain_id;
         }
         proposals
